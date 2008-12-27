@@ -22,8 +22,6 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 
 
-import version_providers
-import version_catalogs
 import db_backend
 
 

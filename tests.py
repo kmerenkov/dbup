@@ -26,12 +26,12 @@
 
 import unittest
 
-import version_providers
-import version_catalogs
+import version_provider
+import version_catalog
 import manager
 
 
-class DummyVersionProvider(version_providers.VersionProviderInterface):
+class DummyVersionProvider(version_provider.VersionProviderInterface):
     def __init__(self, version_to_return):
         self.version_to_return = version_to_return
 
@@ -42,7 +42,7 @@ class DummyVersionProvider(version_providers.VersionProviderInterface):
         self.version_to_return = new_version
 
 
-class DummyVersionsCatalog(version_catalogs.VersionsCatalogInterface):
+class DummyVersionsCatalog(version_catalog.VersionsCatalogInterface):
     def __init__(self, versions_list):
         self.versions_list = versions_list
 

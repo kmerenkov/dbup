@@ -49,8 +49,8 @@ class Session(object):
     """
     def __init__(self, connection):
         self.connection = connection
-        Session = sqlalchemy.orm.sessionmaker(transactional=False)
-        self.session = Session(bind=self.connection)
+        AlchemySession = sqlalchemy.orm.sessionmaker(transactional=False)
+        self.session = AlchemySession(bind=self.connection)
         self.transaction_began = False
 
     def __cleanup(self):
