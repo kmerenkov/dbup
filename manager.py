@@ -24,10 +24,12 @@
 
 import version_providers
 import version_catalogs
+import db_backend
 
 
 class Manager(object):
-    def __init__(self, provider=None, catalog=None):
+    def __init__(self, connection_string=None, provider=None, catalog=None):
+        self.connection_string = connection_string
         self.provider = provider
         self.catalog = catalog
 
@@ -59,3 +61,14 @@ class Manager(object):
         else:
             to_ver_idx = all_vers.index(to) + 1
         return all_vers[cur_ver_idx+1:to_ver_idx]
+
+    def change_version_to(self, new_version=None):
+        trace = self.build_patching_trace(new_version)
+        backend = db_backend.DbBackend(self.connection_string) # FIXME don't do that again, never!
+        connection = backend.connect()
+        session = db_backend.Session(connection)
+        for stage_name in trace:
+            stage = self.catalog.load_stage(stage_name)
+            setattr(stage, "session", session)
+            stage.up()
+        session.commit()

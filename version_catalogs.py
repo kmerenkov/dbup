@@ -24,6 +24,9 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 
 
+import os
+
+
 class VersionsCatalogInterface(object):
     """
     Class that lists all available versions.
@@ -32,3 +35,21 @@ class VersionsCatalogInterface(object):
     def get_available_versions(self):
         """ Returns list of available versions. """
         pass
+
+    def load_stage(self, version):
+        pass
+
+
+class FileSystemVersionsCatalog(VersionsCatalogInterface):
+    def __init__(self, path='.'):
+        self.path = path
+
+    def get_available_versions(self):
+        versions = [ f[:-3] for f in os.listdir(self.path) if not os.path.isdir(f) and f.endswith('.py') ]
+        versions.sort()
+        return versions
+
+    def load_stage(self, version):
+        stage_module = __import__(self.path + '/' + version) # TBD dirtiness, make it look better
+        Stage = getattr(stage_module, "Stage", None)
+        return Stage()

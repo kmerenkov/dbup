@@ -61,6 +61,7 @@ class Session(object):
     def execute(self, expression, *args, **kwargs):
         if not self.transaction_began:
             self.session.begin() # start transaction
+            self.transaction_began = True
         return self.session.execute(expression, *args, **kwargs)
 
     def rollback(self):
