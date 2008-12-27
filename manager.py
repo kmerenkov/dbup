@@ -26,16 +26,12 @@ class Manager(object):
         if to and to not in all_vers:
             return None
         # find out whether it's upgrade or downgrade
-        if is_upgrade(cur_ver, to):
-            cur_ver_idx = all_vers.index(cur_ver)
-            to_ver_idx = None
-            if not to:
-                to_ver_idx = len(all_vers)
-            else:
-                to_ver_idx = all_vers.index(to) + 1
-            return all_vers[cur_ver_idx+1:to_ver_idx]
-        else:
+        if not is_upgrade(cur_ver, to):
             all_vers.reverse()
-            cur_ver_idx = all_vers.index(cur_ver)
+        cur_ver_idx = all_vers.index(cur_ver)
+        to_ver_idx = None
+        if not to: # cannot happen with downgrade
+            to_ver_idx = len(all_vers)
+        else:
             to_ver_idx = all_vers.index(to) + 1
-            return all_vers[cur_ver_idx+1:to_ver_idx]
+        return all_vers[cur_ver_idx+1:to_ver_idx]
