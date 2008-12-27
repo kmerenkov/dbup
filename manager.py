@@ -59,20 +59,42 @@ class Manager(object):
             return None
         if to and to not in all_vers:
             return None
+        cur_ver_idx = all_vers.index(cur_ver)
         # find out whether it's upgrade or downgrade
         upgrading = is_upgrade(cur_ver, to)
         if not upgrading:
             all_vers.reverse()
-        cur_ver_idx = all_vers.index(cur_ver)
-        to_ver_idx = None
-        if not to: # cannot happen with downgrade
-            to_ver_idx = len(all_vers)
+            to_ver_idx = all_vers.index(to)
         else:
-            to_ver_idx = all_vers.index(to) + 1
+            to_ver_idx = None
+            if not to: # cannot happen with downgrade
+                to_ver_idx = len(all_vers)
+            else:
+                to_ver_idx = all_vers.index(to) + 1
         trace = all_vers[cur_ver_idx+1:to_ver_idx]
         return (upgrading, trace)
 
+    def setup_environment(self, stage, session):
+        def read_file(path):
+            f = open(path)
+            content = f.read()
+            f.close()
+            return content
+
+        # UGLINESS
+        functions = {}
+        functions['execute_sql'] = session.execute
+        functions['execute_sql_file'] = lambda path: session.execute(read_file(path))
+
+        for func_name, func_body in functions.iteritems():
+            setattr(stage, func_name, func_body)
+
     def change_version_to(self, new_version=None):
+        def read_file(path):
+            f = open(path)
+            content = f.read()
+            f.close()
+            return content
         upgrading, trace = self.build_patching_trace(new_version)
         if not trace:
             return
@@ -83,7 +105,7 @@ class Manager(object):
         for stage_name in trace:
             current_stage = stage_name
             stage = self.catalog.load_stage(stage_name)
-            setattr(stage, "execute_sql", session.execute)
+            self.setup_environment(stage, session)
             if upgrading:
                 stage.up()
             else:

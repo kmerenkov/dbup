@@ -76,7 +76,7 @@ class ManagerTestCase(unittest.TestCase):
         dummy_catalog = DummyVersionsCatalog(['1.0', '2.0', '3.0', '4.0', '5.0'])
         m = manager.Manager(provider=dummy_provider, catalog=dummy_catalog)
         actual = m.build_patching_trace('1.0')
-        expected = (False, ['2.0', '1.0'])
+        expected = (False, ['2.0'])
         self.assertEqual(actual, expected)
 
     def test_build_patching_trace_004(self):
