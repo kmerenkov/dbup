@@ -3,9 +3,9 @@ import version_catalogs
 
 
 class Manager(object):
-    def __init__(self):
-        self.provider = version_providers.DummyVersionProvider('3.0')
-        self.catalog = version_catalogs.DummyVersionsCatalog(['1.0', '2.0', '3.0', '4.0', '5.0'])
+    def __init__(self, provider=None, catalog=None):
+        self.provider = provider
+        self.catalog = catalog
 
     def build_patching_trace(self, to=None):
         def is_upgrade(ver_from, ver_to):

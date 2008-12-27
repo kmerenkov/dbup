@@ -18,17 +18,6 @@ class VersionProviderInterface(object):
         pass
 
 
-class DummyVersionProvider(VersionProviderInterface):
-    def __init__(self, version_to_return):
-        self.version_to_return = version_to_return
-
-    def get_current_version(self):
-        return self.version_to_return
-
-    def set_current_version(self, new_version):
-        self.version_to_return = new_version
-
-
 class VersionProvider(VersionProviderInterface):
     def __init__(self, connection_string, version_table='dbup_version'):
         super(VersionProvider, self).__init__()
