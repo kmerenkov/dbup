@@ -47,6 +47,16 @@ class Manager(object):
         cur_ver = self.provider.get_current_version()
         all_vers = self.catalog.get_available_versions()
         all_vers.sort()
+        if cur_ver is None and all_vers:
+            # we are installing, not upgrading or downgrading
+            cur_ver = all_vers[0]
+            if to and to not in all_vers:
+                return None
+            if not to:
+                return (True, all_vers)
+            else:
+                to_ver_idx = all_vers.index(to) + 1
+                return (True, all_vers[:to_ver_idx])
         if cur_ver not in all_vers:
             return None
         if to and to not in all_vers:
@@ -61,18 +71,25 @@ class Manager(object):
             to_ver_idx = len(all_vers)
         else:
             to_ver_idx = all_vers.index(to) + 1
-        return (upgrading, all_vers[cur_ver_idx+1:to_ver_idx])
+        trace = all_vers[cur_ver_idx+1:to_ver_idx]
+        return (upgrading, trace)
 
     def change_version_to(self, new_version=None):
         upgrading, trace = self.build_patching_trace(new_version)
+        if not trace:
+            return
         backend = db_backend.DbBackend(self.connection_string) # FIXME don't do that again, never!
         connection = backend.connect()
         session = db_backend.Session(connection)
+        current_stage = None
         for stage_name in trace:
+            current_stage = stage_name
             stage = self.catalog.load_stage(stage_name)
-            setattr(stage, "session", session)
+            setattr(stage, "execute_sql", session.execute)
             if upgrading:
                 stage.up()
             else:
                 stage.down()
+        # final touch, update current version value
+        self.provider.set_current_version(current_stage)
         session.commit()

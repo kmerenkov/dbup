@@ -88,6 +88,23 @@ class ManagerTestCase(unittest.TestCase):
         expected = (True, ['2.0', '3.0', '4.0', '5.0'])
         self.assertEqual(actual, expected)
 
+    def test_build_patching_trace_005(self):
+        """ If current version is None, include all versions into trace """
+        dummy_provider = DummyVersionProvider(None)
+        dummy_catalog = DummyVersionsCatalog(['1.0', '2.0', '3.0', '4.0', '5.0'])
+        m = manager.Manager(provider=dummy_provider, catalog=dummy_catalog)
+        actual = m.build_patching_trace()
+        expected = (True, ['1.0', '2.0', '3.0', '4.0', '5.0'])
+        self.assertEqual(actual, expected)
+
+    def test_build_patching_trace_006(self):
+        """ If current version is None, include all versions prior to specified """
+        dummy_provider = DummyVersionProvider(None)
+        dummy_catalog = DummyVersionsCatalog(['1.0', '2.0', '3.0', '4.0', '5.0'])
+        m = manager.Manager(provider=dummy_provider, catalog=dummy_catalog)
+        actual = m.build_patching_trace('3.0')
+        expected = (True, ['1.0', '2.0', '3.0'])
+        self.assertEqual(actual, expected)
 
 if __name__ == "__main__":
     unittest.main()
