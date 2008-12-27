@@ -53,16 +53,26 @@ class Session(object):
         self.session = Session(bind=self.connection)
         self.transaction_began = False
 
+    def __cleanup(self):
+        self.connection.close()
+        self.connection = None
+        self.session = None
+
     def execute(self, expression, *args, **kwargs):
         if not self.transaction_began:
             self.session.begin() # start transaction
         return self.session.execute(expression, *args, **kwargs)
+
+    def rollback(self):
+        """
+        Issue rollback on transaction. You cannot re-use this session after attempting rollback.
+        """
+        self.session.rollback()
+        self.__cleanup()
 
     def commit(self):
         """
         Finishes transaction. You cannot re-use this session after attempting commit.
         """
         self.session.commit()
-        self.connection.close()
-        self.session = None
-        self.connection = None
+        self.__cleanup()
