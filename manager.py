@@ -52,7 +52,8 @@ class Manager(object):
         if to and to not in all_vers:
             return None
         # find out whether it's upgrade or downgrade
-        if not is_upgrade(cur_ver, to):
+        upgrading = is_upgrade(cur_ver, to)
+        if not upgrading:
             all_vers.reverse()
         cur_ver_idx = all_vers.index(cur_ver)
         to_ver_idx = None
@@ -60,15 +61,18 @@ class Manager(object):
             to_ver_idx = len(all_vers)
         else:
             to_ver_idx = all_vers.index(to) + 1
-        return all_vers[cur_ver_idx+1:to_ver_idx]
+        return (upgrading, all_vers[cur_ver_idx+1:to_ver_idx])
 
     def change_version_to(self, new_version=None):
-        trace = self.build_patching_trace(new_version)
+        upgrading, trace = self.build_patching_trace(new_version)
         backend = db_backend.DbBackend(self.connection_string) # FIXME don't do that again, never!
         connection = backend.connect()
         session = db_backend.Session(connection)
         for stage_name in trace:
             stage = self.catalog.load_stage(stage_name)
             setattr(stage, "session", session)
-            stage.up()
+            if upgrading:
+                stage.up()
+            else:
+                stage.down()
         session.commit()
