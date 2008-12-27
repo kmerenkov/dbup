@@ -1,0 +1,23 @@
+Copyright (c) 2008 by Konstantin Merenkov <kmerenkov@gmail.com>
+Project's homepage: http://github.com/kmerenkov/dbup/tree/master
+
+See LICENSE file in the same directory as this README
+
+
+==== About ====
+This application is designed to let you keep track of your database
+scheme versions currently used in your applications, and easily
+upgrade or downgrade tables.
+
+==== Dependancies ====
+ - python 2.5 (probably 2.4 too)
+ - sqlalchemy 0.4 and later
+
+==== Why? ====
+I need something to use in one project I work on.
+Main goal is to make it work with our project and environment.
+Secondary goal is to make it generic, so it could be used
+in many projects that use databases (main target - webapps).
+
+==== Help? Documentation? ====
+Sorry, not yet. Project is on its early development stage.
