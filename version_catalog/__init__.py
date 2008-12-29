@@ -27,7 +27,7 @@
 import os
 
 
-class VersionsCatalogInterface(object):
+class BaseVersionsCatalog(object):
     """
     Class that lists all available versions.
     """
@@ -40,8 +40,9 @@ class VersionsCatalogInterface(object):
         pass
 
 
-class FileSystemVersionsCatalog(VersionsCatalogInterface):
+class FileSystemVersionsCatalog(BaseVersionsCatalog):
     def __init__(self, path='.'):
+        super(FileSystemVersionsCatalog, self).__init__()
         self.path = path
 
     def get_available_versions(self):

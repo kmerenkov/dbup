@@ -27,7 +27,7 @@
 import db_backend
 
 
-class VersionProviderInterface(object):
+class BaseVersionProvider(object):
     """
     Class that implements version provider interface.
     Gives you an ability to look up current version of database
@@ -42,26 +42,44 @@ class VersionProviderInterface(object):
         pass
 
 
-class VersionProvider(VersionProviderInterface):
+class SqlVersionProvider(BaseVersionProvider):
+    """
+    Class that implements sql-interface to get/set current version.
+    If you want to implement more advanced logic for get_current_version
+    and set_current_version, you just have to inherit this class and
+    re-implement these methods.
+    """
     def __init__(self, connection_string, version_table='dbup_version'):
+        """
+        version_table - table where current version number is kept.
+        """
         super(VersionProvider, self).__init__()
         # NOTE example: 'sqlite:///relative/path/to/database.txt'
         self.connection_string = connection_string
         self.version_table = version_table
 
-    def __get_session(self):
+    def get_session(self):
+        """
+        For internal use only. Connects to database and returns a session.
+        You want to call for this function if you are overriding
+        set_current_version and get_current_version.
+        """
         backend = db_backend.DbBackend(self.connection_string)
         connection = backend.connect()
         session = db_backend.Session(connection)
         return session
 
     def __create_table(self):
-        session = self.__get_session()
+        session = self.get_session()
         session.execute("create table %s (current_version char(50));" % self.version_table)
         session.commit()
 
     def get_current_version(self):
-        session = self.__get_session()
+        """
+        Returns current version installed, or None.
+        None supposed to mean that there is no installation at all.
+        """
+        session = self.get_session()
         try:
             ret = session.execute("select * from %s;" % self.version_table)
             record = ret.fetchone()
@@ -72,7 +90,11 @@ class VersionProvider(VersionProviderInterface):
         return record[0]
 
     def set_current_version(self, new_version):
-        session = self.__get_session()
+        """
+        Updates current version record in database.
+        Doesn't return anything.
+        """
+        session = self.get_session()
         try:
             session.execute("update %s set current_version=:new_version;" % self.version_table,
                             {'new_version': new_version})
@@ -82,7 +104,7 @@ class VersionProvider(VersionProviderInterface):
             session.rollback()
         # if we've failed to update version, create the table and 'insert' new version
         self.__create_table()
-        session = self.__get_session()
+        session = self.get_session()
         session.execute("insert into %s values (:new_version);" % self.version_table,
                         {'new_version': new_version})
         session.commit()

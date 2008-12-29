@@ -31,8 +31,9 @@ import version_catalog
 import manager
 
 
-class DummyVersionProvider(version_provider.VersionProviderInterface):
+class DummyVersionProvider(version_provider.BaseVersionProvider):
     def __init__(self, version_to_return):
+        super(DummyVersionProvider, self).__init__()
         self.version_to_return = version_to_return
 
     def get_current_version(self):
@@ -42,8 +43,9 @@ class DummyVersionProvider(version_provider.VersionProviderInterface):
         self.version_to_return = new_version
 
 
-class DummyVersionsCatalog(version_catalog.VersionsCatalogInterface):
+class DummyVersionsCatalog(version_catalog.BaseVersionsCatalog):
     def __init__(self, versions_list):
+        super(DummyVersionsCatalog, self).__init__()
         self.versions_list = versions_list
 
     def get_available_versions(self):

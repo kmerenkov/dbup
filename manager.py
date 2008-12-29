@@ -90,11 +90,6 @@ class Manager(object):
             setattr(stage, func_name, func_body)
 
     def change_version_to(self, new_version=None):
-        def read_file(path):
-            f = open(path)
-            content = f.read()
-            f.close()
-            return content
         upgrading, trace = self.build_patching_trace(new_version)
         if not trace:
             return
