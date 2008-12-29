@@ -52,46 +52,40 @@ class DummyVersionsCatalog(version_catalog.BaseVersionsCatalog):
         return self.versions_list
 
 
-
 class ManagerTestCase(unittest.TestCase):
     def test_build_patching_trace_001(self):
-        """ Must not advice any upgrades/downgrades when trying to deploy already deployed version. """
         dummy_provider = DummyVersionProvider('3.0')
         dummy_catalog = DummyVersionsCatalog(['1.0', '2.0', '3.0', '4.0', '5.0'])
         m = manager.Manager(provider=dummy_provider, catalog=dummy_catalog)
         actual = m.build_patching_trace('3.0')
-        expected = (True, [])
+        expected = (True, ['3.0'])
         self.assertEqual(actual, expected)
 
     def test_build_patching_trace_002(self):
-        """ Must advice upgrade from 1.0 to 5.0 """
         dummy_provider = DummyVersionProvider('1.0')
         dummy_catalog = DummyVersionsCatalog(['1.0', '2.0', '3.0', '4.0', '5.0'])
         m = manager.Manager(provider=dummy_provider, catalog=dummy_catalog)
         actual = m.build_patching_trace('5.0')
-        expected = (True, ['2.0', '3.0', '4.0', '5.0'])
+        expected = (True, ['1.0', '2.0', '3.0', '4.0', '5.0'])
         self.assertEqual(actual, expected)
 
     def test_build_patching_trace_003(self):
-        """ Must advice downgrade from 3.0 to 1.0 """
         dummy_provider = DummyVersionProvider('3.0')
         dummy_catalog = DummyVersionsCatalog(['1.0', '2.0', '3.0', '4.0', '5.0'])
         m = manager.Manager(provider=dummy_provider, catalog=dummy_catalog)
         actual = m.build_patching_trace('1.0')
-        expected = (False, ['2.0'])
+        expected = (False, ['2.0', '1.0'])
         self.assertEqual(actual, expected)
 
     def test_build_patching_trace_004(self):
-        """ When destination version isn't specified, treat it as last version possiblee """
         dummy_provider = DummyVersionProvider('1.0')
         dummy_catalog = DummyVersionsCatalog(['1.0', '2.0', '3.0', '4.0', '5.0'])
         m = manager.Manager(provider=dummy_provider, catalog=dummy_catalog)
         actual = m.build_patching_trace()
-        expected = (True, ['2.0', '3.0', '4.0', '5.0'])
+        expected = (True, ['1.0', '2.0', '3.0', '4.0', '5.0'])
         self.assertEqual(actual, expected)
 
     def test_build_patching_trace_005(self):
-        """ If current version is None, include all versions into trace """
         dummy_provider = DummyVersionProvider(None)
         dummy_catalog = DummyVersionsCatalog(['1.0', '2.0', '3.0', '4.0', '5.0'])
         m = manager.Manager(provider=dummy_provider, catalog=dummy_catalog)
@@ -100,12 +94,32 @@ class ManagerTestCase(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     def test_build_patching_trace_006(self):
-        """ If current version is None, include all versions prior to specified """
         dummy_provider = DummyVersionProvider(None)
         dummy_catalog = DummyVersionsCatalog(['1.0', '2.0', '3.0', '4.0', '5.0'])
         m = manager.Manager(provider=dummy_provider, catalog=dummy_catalog)
         actual = m.build_patching_trace('3.0')
         expected = (True, ['1.0', '2.0', '3.0'])
+        self.assertEqual(actual, expected)
+
+    def test_calculate_range_001(self):
+        dummy_catalog = DummyVersionsCatalog(['1.0', '2.0', '3.0', '4.0', '5.0'])
+        m = manager.Manager(provider=None, catalog=dummy_catalog)
+        actual = m.calculate_range('1.0', '5.0', dummy_catalog.get_available_versions())
+        expected = (0, 4)
+        self.assertEqual(actual, expected)
+
+    def test_calculate_range_002(self):
+        dummy_catalog = DummyVersionsCatalog(['1.0', '2.0', '3.0', '4.0', '5.0'])
+        m = manager.Manager(provider=None, catalog=dummy_catalog)
+        actual = m.calculate_range('5.0', '1.0', dummy_catalog.get_available_versions())
+        expected = (4, 0)
+        self.assertEqual(actual, expected)
+
+    def test_calculate_range_003(self):
+        dummy_catalog = DummyVersionsCatalog(['1.0', '2.0', '3.0', '4.0', '5.0'])
+        m = manager.Manager(provider=None, catalog=dummy_catalog)
+        actual = m.calculate_range('1.0', '4.0', dummy_catalog.get_available_versions())
+        expected = (0, 3)
         self.assertEqual(actual, expected)
 
 if __name__ == "__main__":

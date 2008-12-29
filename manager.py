@@ -40,62 +40,56 @@ class Manager(object):
         else:
             self.backend = backend
 
-    def build_patching_trace(self, to=None):
-        def is_upgrade(ver_from, ver_to):
-            if not ver_to:
-                return True
-            x = [ver_from, ver_to]
-            x.sort()
-            if x[0] == ver_from:
-                return True
-            return False
+    def calculate_range(self, frm, to, all_items):
+        if frm not in all_items or to not in all_items:
+            return (None, None)
+        frm_idx = all_items.index(frm)
+        to_idx = all_items.index(to)
+        return (frm_idx, to_idx)
 
-        # get current version and all available versions
+    def build_patching_trace(self, to=None):
         cur_ver = self.provider.get_current_version()
         all_vers = self.catalog.get_available_versions()
-        if cur_ver is None and all_vers:
-            # we are installing, not upgrading or downgrading
+        if not all_vers:
+            return None
+        if to is None:
+            to = all_vers[-1]
+        if cur_ver is None: # fresh install
             cur_ver = all_vers[0]
-            if to and to not in all_vers:
-                return None
-            if not to:
-                return (True, all_vers)
-            else:
-                to_ver_idx = all_vers.index(to) + 1
-                return (True, all_vers[:to_ver_idx])
-        if cur_ver not in all_vers:
+        x, y = self.calculate_range(cur_ver, to, all_vers)
+        if x == y == None:
             return None
-        if to and to not in all_vers:
-            return None
-        cur_ver_idx = all_vers.index(cur_ver)
-        # find out whether it's upgrade or downgrade
-        upgrading = is_upgrade(cur_ver, to)
-        if not upgrading:
-            all_vers.reverse()
-            to_ver_idx = all_vers.index(to)
+        if x > y:
+            retval = all_vers[y:x]
+            retval.reverse()
+            return (False, retval)
         else:
-            to_ver_idx = None
-            if not to:
-                to_ver_idx = len(all_vers)
-            else:
-                to_ver_idx = all_vers.index(to) + 1
-        trace = all_vers[cur_ver_idx+1:to_ver_idx]
-        return (upgrading, trace)
+            return (True, all_vers[x:y+1])
 
-    def change_version_to(self, new_version=None):
-        upgrading, trace = self.build_patching_trace(new_version)
-        if not trace:
-            return
+
+    def process_stages(self, is_upgrading, stages):
         connection = self.backend.connect()
         session = database.backend.Session(connection)
         current_stage = None
-        for stage_name in trace:
+        for stage_name in stages:
             current_stage = stage_name
             stage = self.catalog.load_stage(stage_name)
-            if upgrading:
+            if is_upgrading:
                 stage.up(session)
             else:
                 stage.down(session)
         # final touch, update current version value
         self.provider.set_current_version(current_stage)
         session.commit()
+
+    def uninstall(self):
+        _upgrading, trace = self.build_patching_trace(None, downgrade_inclusive=True)
+        if not trace:
+            return
+        self.process_stages(False, trace)
+
+    def change_version_to(self, new_version=None):
+        upgrading, trace = self.build_patching_trace(new_version)
+        if not trace:
+            return
+        self.process_stages(upgrading, trace[1:])

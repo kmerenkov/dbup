@@ -24,7 +24,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 
 
-import db_backend
+import database.backend
 
 
 class BaseVersionProvider(object):
@@ -49,14 +49,18 @@ class SqlVersionProvider(BaseVersionProvider):
     and set_current_version, you just have to inherit this class and
     re-implement these methods.
     """
-    def __init__(self, connection_string, version_table='dbup_version'):
+    def __init__(self, connection_string, version_table='dbup_version', backend=None):
         """
         version_table - table where current version number is kept.
         """
-        super(VersionProvider, self).__init__()
+        super(BaseVersionProvider, self).__init__()
         # NOTE example: 'sqlite:///relative/path/to/database.txt'
         self.connection_string = connection_string
         self.version_table = version_table
+        if backend is None:
+            self.backend = database.backend.Backend(self.connection_string)
+        else:
+            self.backend = backend
 
     def get_session(self):
         """
@@ -64,9 +68,8 @@ class SqlVersionProvider(BaseVersionProvider):
         You want to call for this function if you are overriding
         set_current_version and get_current_version.
         """
-        backend = db_backend.DbBackend(self.connection_string)
-        connection = backend.connect()
-        session = db_backend.Session(connection)
+        connection = self.backend.connect()
+        session = self.backend.Session(connection)
         return session
 
     def __create_table(self):
