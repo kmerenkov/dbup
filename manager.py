@@ -53,7 +53,6 @@ class Manager(object):
         # get current version and all available versions
         cur_ver = self.provider.get_current_version()
         all_vers = self.catalog.get_available_versions()
-        all_vers.sort()
         if cur_ver is None and all_vers:
             # we are installing, not upgrading or downgrading
             cur_ver = all_vers[0]

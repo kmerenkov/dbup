@@ -33,7 +33,11 @@ class BaseVersionsCatalog(object):
     """
 
     def get_available_versions(self):
-        """ Returns list of available versions. """
+        """
+        Returns list of available versions.
+        Don't forget to sort versions the right way (depends on you)
+        before returning them.
+        """
         pass
 
     def load_stage(self, version):
