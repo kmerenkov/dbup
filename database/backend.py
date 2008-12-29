@@ -28,8 +28,19 @@ import sqlalchemy
 import sqlalchemy.orm
 
 
-class DbBackend(object):
+class BaseBackend(object):
+    def __init__(self, _connection_string):
+        pass
+
+    def connect(self):
+        pass
+
+    def disconnect(self):
+        pass
+
+class Backend(BaseBackend):
     def __init__(self, connection_string):
+        super(Backend, self).__init__(connection_string)
         self.connection_string = connection_string
         self.engine = None
         self.connection = None

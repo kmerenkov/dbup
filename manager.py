@@ -22,14 +22,23 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 
 
-import db_backend
+import database.backend
 
 
 class Manager(object):
-    def __init__(self, connection_string=None, provider=None, catalog=None):
+    def __init__(self, connection_string=None, provider=None, catalog=None, backend=None):
+        """
+        You ask this class to upgrade/downgrade/etc your databases.
+        provider. catalog, and backend are instnaces of derivatives of classes
+        such as BaseVersionProvider, BaseVersionsCatalog, and BaseBackend.
+        """
         self.connection_string = connection_string
         self.provider = provider
         self.catalog = catalog
+        if backend is None:
+            self.backend = database.backend.Backend(self.connection_string)
+        else:
+            self.backend = backend
 
     def build_patching_trace(self, to=None):
         def is_upgrade(ver_from, ver_to):
@@ -74,37 +83,20 @@ class Manager(object):
         trace = all_vers[cur_ver_idx+1:to_ver_idx]
         return (upgrading, trace)
 
-    def setup_environment(self, stage, session):
-        def read_file(path):
-            f = open(path)
-            content = f.read()
-            f.close()
-            return content
-
-        # UGLINESS
-        functions = {}
-        functions['execute_sql'] = session.execute
-        functions['execute_sql_file'] = lambda path: session.execute(read_file(path))
-
-        for func_name, func_body in functions.iteritems():
-            setattr(stage, func_name, func_body)
-
     def change_version_to(self, new_version=None):
         upgrading, trace = self.build_patching_trace(new_version)
         if not trace:
             return
-        backend = db_backend.DbBackend(self.connection_string) # FIXME don't do that again, never!
-        connection = backend.connect()
-        session = db_backend.Session(connection)
+        connection = self.backend.connect()
+        session = database.backend.Session(connection)
         current_stage = None
         for stage_name in trace:
             current_stage = stage_name
             stage = self.catalog.load_stage(stage_name)
-            self.setup_environment(stage, session)
             if upgrading:
-                stage.up()
+                stage.up(session)
             else:
-                stage.down()
+                stage.down(session)
         # final touch, update current version value
         self.provider.set_current_version(current_stage)
         session.commit()
