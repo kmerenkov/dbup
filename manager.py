@@ -67,7 +67,7 @@ class Manager(object):
             to_ver_idx = all_vers.index(to)
         else:
             to_ver_idx = None
-            if not to: # cannot happen with downgrade
+            if not to:
                 to_ver_idx = len(all_vers)
             else:
                 to_ver_idx = all_vers.index(to) + 1
