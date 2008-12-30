@@ -25,7 +25,12 @@
 
 
 def sql_from_file(session, path):
+    """
+    Load SQL from file, specified by 'path' argument,
+    and execute it via 'execute' function of 'session' specified.
+    Returns value returned by 'session.execute'
+    """
     f = open(path, 'r')
     sql = f.read()
     f.close()
-    session.execute(sql)
+    return session.execute(sql)
