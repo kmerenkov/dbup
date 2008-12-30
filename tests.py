@@ -54,38 +54,43 @@ class DummyVersionsCatalog(version_catalog.BaseVersionsCatalog):
 
 class ManagerTestCase(unittest.TestCase):
     def test_build_patching_trace_001(self):
+        """ upgrade from 3.0 to 3.0 """
         dummy_provider = DummyVersionProvider('3.0')
         dummy_catalog = DummyVersionsCatalog(['1.0', '2.0', '3.0', '4.0', '5.0'])
         m = manager.Manager(provider=dummy_provider, catalog=dummy_catalog)
         actual = m.build_patching_trace('3.0')
-        expected = (True, ['3.0'])
+        expected = (True, [])
         self.assertEqual(actual, expected)
 
     def test_build_patching_trace_002(self):
+        """ upgrade from 1.0 to 5.0 """
         dummy_provider = DummyVersionProvider('1.0')
         dummy_catalog = DummyVersionsCatalog(['1.0', '2.0', '3.0', '4.0', '5.0'])
         m = manager.Manager(provider=dummy_provider, catalog=dummy_catalog)
         actual = m.build_patching_trace('5.0')
-        expected = (True, ['1.0', '2.0', '3.0', '4.0', '5.0'])
+        expected = (True, ['2.0', '3.0', '4.0', '5.0'])
         self.assertEqual(actual, expected)
 
     def test_build_patching_trace_003(self):
+        """ downgrade from 3.0 to 1.0 """
         dummy_provider = DummyVersionProvider('3.0')
         dummy_catalog = DummyVersionsCatalog(['1.0', '2.0', '3.0', '4.0', '5.0'])
         m = manager.Manager(provider=dummy_provider, catalog=dummy_catalog)
         actual = m.build_patching_trace('1.0')
-        expected = (False, ['2.0', '1.0'])
+        expected = (False, ['3.0', '2.0'])
         self.assertEqual(actual, expected)
 
     def test_build_patching_trace_004(self):
+        """ upgrade from 1.0 to latest """
         dummy_provider = DummyVersionProvider('1.0')
         dummy_catalog = DummyVersionsCatalog(['1.0', '2.0', '3.0', '4.0', '5.0'])
         m = manager.Manager(provider=dummy_provider, catalog=dummy_catalog)
         actual = m.build_patching_trace()
-        expected = (True, ['1.0', '2.0', '3.0', '4.0', '5.0'])
+        expected = (True, ['2.0', '3.0', '4.0', '5.0'])
         self.assertEqual(actual, expected)
 
     def test_build_patching_trace_005(self):
+        """ fresh install to the latest """
         dummy_provider = DummyVersionProvider(None)
         dummy_catalog = DummyVersionsCatalog(['1.0', '2.0', '3.0', '4.0', '5.0'])
         m = manager.Manager(provider=dummy_provider, catalog=dummy_catalog)
@@ -94,6 +99,7 @@ class ManagerTestCase(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     def test_build_patching_trace_006(self):
+        """ fresh install to 3.0 """
         dummy_provider = DummyVersionProvider(None)
         dummy_catalog = DummyVersionsCatalog(['1.0', '2.0', '3.0', '4.0', '5.0'])
         m = manager.Manager(provider=dummy_provider, catalog=dummy_catalog)

@@ -69,7 +69,7 @@ class SqlVersionProvider(BaseVersionProvider):
         set_current_version and get_current_version.
         """
         connection = self.backend.connect()
-        session = self.backend.Session(connection)
+        session = database.backend.Session(connection)
         return session
 
     def __create_table(self):

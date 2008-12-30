@@ -41,35 +41,41 @@ class Manager(object):
             self.backend = backend
 
     def calculate_range(self, frm, to, all_items):
-        if frm not in all_items or to not in all_items:
-            return (None, None)
-        frm_idx = all_items.index(frm)
-        to_idx = all_items.index(to)
-        return (frm_idx, to_idx)
+        x = None
+        y = None
+        if frm in all_items:
+            x = all_items.index(frm)
+        if to in all_items:
+            y = all_items.index(to)
+        return (x, y)
 
     def build_patching_trace(self, to=None):
         cur_ver = self.provider.get_current_version()
         all_vers = self.catalog.get_available_versions()
-        if not all_vers:
-            return None
-        if to is None:
-            to = all_vers[-1]
-        if cur_ver is None: # fresh install
-            cur_ver = all_vers[0]
         x, y = self.calculate_range(cur_ver, to, all_vers)
-        if x == y == None:
-            return None
-        if x > y:
-            retval = all_vers[y:x]
-            retval.reverse()
-            return (False, retval)
-        else:
-            return (True, all_vers[x:y+1])
-
+        trace = []
+        if x is None: # fresh install, current version is unavailable
+            if y is None: # if y is none, upgrade to the latest version available
+                y = len(all_vers)
+            trace = all_vers[:y+1]
+            return (True, trace)
+        elif x is not None: # it is upgrade or downgrade
+            if y is None:
+                y = len(all_vers) - 1
+            if x < y: # upgrade
+                trace = all_vers[x+1:y+1]
+                return (True, trace)
+            elif x > y: # downgrade
+                trace = all_vers[y+1:x+1]
+                trace.reverse()
+                return (False, trace)
+            else: # do nothing
+                return (True, [])
 
     def process_stages(self, is_upgrading, stages):
         connection = self.backend.connect()
         session = database.backend.Session(connection)
+        session.begin()
         current_stage = None
         for stage_name in stages:
             current_stage = stage_name
@@ -83,13 +89,18 @@ class Manager(object):
         session.commit()
 
     def uninstall(self):
-        _upgrading, trace = self.build_patching_trace(None, downgrade_inclusive=True)
-        if not trace:
+        cur_ver = self.provider.get_current_version()
+        all_vers = self.catalog.get_available_versions()
+        if cur_ver in all_vers:
+            cur_ver_idx = all_vers.index(cur_ver)
+        else:
             return
+        trace = all_vers[:cur_ver_idx+1]
+        trace.reverse()
         self.process_stages(False, trace)
 
     def change_version_to(self, new_version=None):
         upgrading, trace = self.build_patching_trace(new_version)
         if not trace:
             return
-        self.process_stages(upgrading, trace[1:])
+        self.process_stages(upgrading, trace)

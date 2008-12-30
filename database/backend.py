@@ -69,6 +69,10 @@ class Session(object):
         self.connection = None
         self.session = None
 
+    def begin(self):
+        self.session.begin()
+        self.transaction_began = True
+
     def execute(self, expression, *args, **kwargs):
         if not self.transaction_began:
             self.session.begin() # start transaction

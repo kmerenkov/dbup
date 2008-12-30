@@ -27,7 +27,7 @@ print "Available versions: %s" % cat.get_available_versions()
 
 m = Manager(connection_string=conn_str, provider=prov, catalog=cat)
 
-print "Changing version to: %s" % ver_to
+print "Changing version to: %s from: %s" % (ver_to, ver_from)
 m.change_version_to(ver_to)
 print "Uninstalling:"
 m.uninstall()
