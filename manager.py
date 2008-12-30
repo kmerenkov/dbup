@@ -89,6 +89,10 @@ class Manager(object):
         session.commit()
 
     def uninstall(self):
+        """
+        You want to use this method to uninstall database.
+        It will run downgrade on all stages, from current to first one installed.
+        """
         cur_ver = self.provider.get_current_version()
         all_vers = self.catalog.get_available_versions()
         if cur_ver in all_vers:
@@ -100,6 +104,9 @@ class Manager(object):
         self.process_stages(False, trace)
 
     def change_version_to(self, new_version=None):
+        """
+        Will perform upgrading or downgrading, depends on currently installed version.
+        """
         upgrading, trace = self.build_patching_trace(new_version)
         if not trace:
             return
