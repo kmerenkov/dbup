@@ -72,10 +72,7 @@ class Manager(object):
             else: # do nothing
                 return (True, [])
 
-    def process_stages(self, is_upgrading, stages):
-        connection = self.backend.connect()
-        session = database.backend.Session(connection)
-        session.begin()
+    def process_stages(self, session, is_upgrading, stages):
         current_stage = None
         for stage_name in stages:
             current_stage = stage_name
@@ -86,7 +83,6 @@ class Manager(object):
                 stage.down(session)
         # final touch, update current version value
         self.provider.set_current_version(current_stage)
-        session.commit()
 
     def uninstall(self):
         """
@@ -101,7 +97,13 @@ class Manager(object):
             return
         trace = all_vers[:cur_ver_idx+1]
         trace.reverse()
-        self.process_stages(False, trace)
+
+        connection = self.backend.connect()
+        session = database.backend.Session(connection)
+        session.begin()
+        self.process_stages(session, False, trace)
+        self.provider.cleanup()
+        session.commit()
 
     def change_version_to(self, new_version=None):
         """
@@ -110,4 +112,9 @@ class Manager(object):
         upgrading, trace = self.build_patching_trace(new_version)
         if not trace:
             return
-        self.process_stages(upgrading, trace)
+
+        connection = self.backend.connect()
+        session = database.backend.Session(connection)
+        session.begin()
+        self.process_stages(session, upgrading, trace)
+        session.commit()

@@ -41,6 +41,10 @@ class BaseVersionProvider(object):
         """ Updates current version value in database """
         pass
 
+    def cleanup(self):
+        """ Removes version information from database. Useful on uninstallation. """
+        pass
+
 
 class SqlVersionProvider(BaseVersionProvider):
     """
@@ -111,3 +115,15 @@ class SqlVersionProvider(BaseVersionProvider):
         session.execute("insert into %s values (:new_version);" % self.version_table,
                         {'new_version': new_version})
         session.commit()
+
+    def cleanup(self):
+        """
+        Removes version information from database.
+        """
+        session = self.get_session()
+        try:
+            session.execute("drop table %s;" % self.version_table)
+            session.commit()
+        except: # TBD: catch OperationalError from alchemy
+            session.rollback()
+
