@@ -23,6 +23,7 @@
 
 
 import database.backend
+# from sqlalchemy.exceptions import OperationalError
 
 
 class Manager(object):
@@ -77,10 +78,13 @@ class Manager(object):
         for stage_name in stages:
             current_stage = stage_name
             stage = self.catalog.load_stage(stage_name)
-            if is_upgrading:
-                stage.up(session)
-            else:
-                stage.down(session)
+            try:
+                if is_upgrading:
+                    stage.up(session)
+                else:
+                    stage.down(session)
+            except:
+                pass # TBD use logger
         # final touch, update current version value
         self.provider.set_current_version(current_stage)
 
