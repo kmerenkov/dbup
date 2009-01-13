@@ -48,6 +48,9 @@ class SqlWorker(object):
         self.session = None
 
     def setup(self):
+        """
+        For internal use. Attempts to create database containing version information.
+        """
         self.__maybe_init_session()
         try:
             self.__create_table()
@@ -60,7 +63,9 @@ class SqlWorker(object):
         current_stage = None
         for stage_name, stage_instance in stages:
             current_stage = stage_name
+            print "[%s] " % current_stage,
             stage_instance.up(self.session)
+            print "OK"
         self.set_current_version(current_stage) # commit comes from this function
         self.session.close()
 
@@ -69,7 +74,9 @@ class SqlWorker(object):
         downgrade_to = stages[-1][0]
         del stages[-1]
         for stage_name, stage_instance in stages:
+            print "[%s] " % stage_name,
             stage_instance.down(self.session)
+            print "OK"
         self.set_current_version(downgrade_to) # commit comes from this function
         self.session.close()
 
@@ -119,14 +126,10 @@ class SqlWorker(object):
             # self.session.execute("update %s set current_version=:new_version;" % self.version_table,
                             # {'new_version': new_version})
             self.session.commit()
+            print "Changed to version %s." % new_version
             return
         except: # TBD: catch OperationalError from alchemy
             self.session.rollback()
-        # if we've failed to update version, create the table and 'insert' new version
-        # self.__create_table()
-        # self.session.execute("insert into %s values (:new_version);" % self.version_table,
-        #                 {'new_version': new_version})
-        # self.session.commit()
 
     def cleanup(self):
         """
@@ -136,6 +139,7 @@ class SqlWorker(object):
         try:
             self.session.execute("drop table %s;" % self.version_table)
             self.session.commit()
+            print "Removed version information from database."
         except: # TBD: catch OperationalError from alchemy
             self.session.rollback()
 

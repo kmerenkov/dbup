@@ -8,10 +8,10 @@ conn_str = 'sqlite:///dbtest.sqlite'
 
 action = sys.argv[1].lower()
 
-prov = worker.SqlWorker(conn_str)
-cat = version_catalog.FileSystemVersionsCatalog('example_versions')
+worker = worker.SqlWorker(conn_str)
+catalog = version_catalog.FileSystemVersionsCatalog('example_versions')
 
-m = Manager(provider=prov, catalog=cat)
+m = Manager(worker=worker, catalog=catalog)
 
 if action == 'up':
     m.upgrade(sys.argv[2])
@@ -20,7 +20,7 @@ elif action == 'dn':
 elif action == 'del':
     m.uninstall()
 elif action == 'cur':
-    cur_ver = prov.get_current_version()
+    cur_ver = worker.get_current_version()
     if cur_ver is not None:
         print "Current version deployed: %s" % cur_ver
     else:

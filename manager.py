@@ -22,20 +22,19 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 
 
-import database.backend
-# from sqlalchemy.exceptions import OperationalError
-
-
 class Manager(object):
-    def __init__(self, provider=None, catalog=None):
+    def __init__(self, worker=None, catalog=None):
         """
         You ask this class to upgrade/downgrade/etc your databases.
         """
-        self.provider = provider
+        self.worker = worker
         self.catalog = catalog
 
     def upgrade(self, to_version):
-        current_version = self.provider.get_current_version()
+        current_version = self.worker.get_current_version()
+        if current_version == to_version:
+            print "Already at version %s." % current_version
+            return
         available_versions = self.catalog.get_available_versions()
         stages = []
         if current_version in available_versions:
@@ -45,47 +44,50 @@ class Manager(object):
         if to_version in available_versions:
             to_version_idx = available_versions.index(to_version)
         else:
-            print "to_version not in list of available versions (%s)" % available_versions
+            print "Requested version (%s) is unavailable. Available versions are: %s" % (to_version, ", ".join(available_versions))
             return None
         needed_versions = available_versions[current_version_idx+1: to_version_idx+1]
         for version in needed_versions:
             stage = self.catalog.load_stage(version)
             stages.append((version, stage,))
-        self.provider.upgrade(stages)
+        self.worker.upgrade(stages)
 
     def downgrade(self, to_version):
-        current_version = self.provider.get_current_version()
+        current_version = self.worker.get_current_version()
+        if current_version == to_version:
+            print "Already at version %s." % current_version
+            return
         available_versions = self.catalog.get_available_versions()
         stages = []
         if current_version in available_versions:
             current_version_idx = available_versions.index(current_version)
         else:
-            print "no installation detected"
+            print "No installation detected."
             return None
         if to_version in available_versions:
             to_version_idx = available_versions.index(to_version)
         else:
-            print "to_version not in list of available versions (%s)" % available_versions
+            print "Requested version (%s) is unavailable. Available versions are: %s" % (to_version, ", ".join(available_versions))
             return None
         needed_versions = available_versions[to_version_idx: current_version_idx+1]
         needed_versions.reverse()
         for version in needed_versions:
             stage = self.catalog.load_stage(version)
             stages.append((version, stage,))
-        self.provider.downgrade(stages)
+        self.worker.downgrade(stages)
 
     def uninstall(self):
-        current_version = self.provider.get_current_version()
+        current_version = self.worker.get_current_version()
         available_versions = self.catalog.get_available_versions()
         stages = []
         if current_version in available_versions:
             current_version_idx = available_versions.index(current_version)
         else:
-            print "no installation detected"
+            print "No installation detected."
             return None
         needed_versions = available_versions[:current_version_idx+1]
         needed_versions.reverse()
         for version in needed_versions:
             stage = self.catalog.load_stage(version)
             stages.append((version, stage,))
-        self.provider.uninstall(stages)
+        self.worker.uninstall(stages)
