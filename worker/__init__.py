@@ -59,6 +59,7 @@ class SqlWorker(object):
             self.session.rollback()
 
     def upgrade(self, stages):
+        print "Upgrading..."
         self.setup()
         current_stage = None
         for stage_name, stage_instance in stages:
@@ -68,8 +69,10 @@ class SqlWorker(object):
             print "OK"
         self.set_current_version(current_stage) # commit comes from this function
         self.session.close()
+        print "Upgrading complete."
 
     def downgrade(self, stages):
+        print "Downgrading..."
         self.setup()
         downgrade_to = stages[-1][0]
         del stages[-1]
@@ -79,8 +82,10 @@ class SqlWorker(object):
             print "OK"
         self.set_current_version(downgrade_to) # commit comes from this function
         self.session.close()
+        print "Downgrading complete."
 
     def uninstall(self, stages):
+        print "Uninstalling..."
         self.setup()
         for stage_name, stage_instance in stages:
             print "[%s] " % stage_name,
@@ -88,6 +93,7 @@ class SqlWorker(object):
             print "OK"
         self.cleanup()
         self.session.close()
+        print "Uninstalling complete."
 
     def __maybe_init_session(self):
         if not self.session:
