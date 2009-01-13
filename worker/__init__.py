@@ -78,7 +78,6 @@ class SqlWorker(object):
         for _stage_name, stage_instance in stages:
             stage_instance.down(self.session)
         self.cleanup()
-        self.session.commit()
         self.session.close()
 
     def __maybe_init_session(self):
