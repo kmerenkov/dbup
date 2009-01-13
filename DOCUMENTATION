@@ -1,0 +1,30 @@
+Copyright (c) 2009 by Konstantin Merenkov <kmerenkov@gmail.com>
+
+This file is a part of dbup product (http://github.com/kmerenkov/dbup/tree/master).
+
+
+==== Architecture explanation ====
+There are three main components: worker, version catalog and manager.
+
+Worker knows about version of database scheme currently deployed, knows
+how to change this version, knows how to perform updates, downgrades, and
+uninstalls.
+
+Version catalog knows about patches - where they are, how to load them, etc.
+
+Manager operates with these both components, allowing you to perform
+updates and downgrades, and also uninstalls. It asks catalog about all
+available versions, asks worker about current version, sorts things out
+and lets worker perform required operations.
+
+==== Why it is like that ====
+
+You only need to adapt worker and catalog to your needs.
+Worker needs to know only database-specific stuff, while catalog needs to know
+how to retrieve and provide patches.
+
+API is pretty simple for both of them.
+
+Worker is required to implement such functions as get_current_version, set_current_version,
+upgrade, downgrade and uninstall.
+Catalog is required to implement only one function - get_available_versions.
