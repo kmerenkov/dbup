@@ -27,98 +27,65 @@ import database.backend
 
 
 class Manager(object):
-    def __init__(self, connection_string=None, provider=None, catalog=None, backend=None):
+    def __init__(self, provider=None, catalog=None):
         """
         You ask this class to upgrade/downgrade/etc your databases.
-        provider. catalog, and backend are instnaces of derivatives of classes
-        such as BaseVersionProvider, BaseVersionsCatalog, and BaseBackend.
         """
-        self.connection_string = connection_string
         self.provider = provider
         self.catalog = catalog
-        if backend is None:
-            self.backend = database.backend.Backend(self.connection_string)
+
+    def upgrade(self, to_version):
+        current_version = self.provider.get_current_version()
+        available_versions = self.catalog.get_available_versions()
+        stages = []
+        if current_version in available_versions:
+            current_version_idx = available_versions.index(current_version)
         else:
-            self.backend = backend
+            current_version_idx = -1
+        if to_version in available_versions:
+            to_version_idx = available_versions.index(to_version)
+        else:
+            print "to_version not in list of available versions (%s)" % available_versions
+            return None
+        needed_versions = available_versions[current_version_idx+1: to_version_idx+1]
+        for version in needed_versions:
+            stage = self.catalog.load_stage(version)
+            stages.append((version, stage,))
+        self.provider.upgrade(stages)
 
-    def calculate_range(self, frm, to, all_items):
-        x = None
-        y = None
-        if frm in all_items:
-            x = all_items.index(frm)
-        if to in all_items:
-            y = all_items.index(to)
-        return (x, y)
-
-    def build_patching_trace(self, to=None):
-        cur_ver = self.provider.get_current_version()
-        all_vers = self.catalog.get_available_versions()
-        x, y = self.calculate_range(cur_ver, to, all_vers)
-        trace = []
-        if x is None: # fresh install, current version is unavailable
-            if y is None: # if y is none, upgrade to the latest version available
-                y = len(all_vers)
-            trace = all_vers[:y+1]
-            return (True, trace)
-        elif x is not None: # it is upgrade or downgrade
-            if y is None:
-                y = len(all_vers) - 1
-            if x < y: # upgrade
-                trace = all_vers[x+1:y+1]
-                return (True, trace)
-            elif x > y: # downgrade
-                trace = all_vers[y+1:x+1]
-                trace.reverse()
-                return (False, trace)
-            else: # do nothing
-                return (True, [])
-
-    def process_stages(self, session, is_upgrading, stages):
-        current_stage = None
-        for stage_name in stages:
-            current_stage = stage_name
-            stage = self.catalog.load_stage(stage_name)
-            try:
-                if is_upgrading:
-                    stage.up(session)
-                else:
-                    stage.down(session)
-            except:
-                pass # TBD use logger
-        # final touch, update current version value
-        self.provider.set_current_version(current_stage)
+    def downgrade(self, to_version):
+        current_version = self.provider.get_current_version()
+        available_versions = self.catalog.get_available_versions()
+        stages = []
+        if current_version in available_versions:
+            current_version_idx = available_versions.index(current_version)
+        else:
+            print "no installation detected"
+            return None
+        if to_version in available_versions:
+            to_version_idx = available_versions.index(to_version)
+        else:
+            print "to_version not in list of available versions (%s)" % available_versions
+            return None
+        needed_versions = available_versions[to_version_idx: current_version_idx+1]
+        needed_versions.reverse()
+        for version in needed_versions:
+            stage = self.catalog.load_stage(version)
+            stages.append((version, stage,))
+        self.provider.downgrade(stages)
 
     def uninstall(self):
-        """
-        You want to use this method to uninstall database.
-        It will run downgrade on all stages, from current to first one installed.
-        """
-        cur_ver = self.provider.get_current_version()
-        all_vers = self.catalog.get_available_versions()
-        if cur_ver in all_vers:
-            cur_ver_idx = all_vers.index(cur_ver)
+        current_version = self.provider.get_current_version()
+        available_versions = self.catalog.get_available_versions()
+        stages = []
+        if current_version in available_versions:
+            current_version_idx = available_versions.index(current_version)
         else:
-            return
-        trace = all_vers[:cur_ver_idx+1]
-        trace.reverse()
-
-        connection = self.backend.connect()
-        session = database.backend.Session(connection)
-        session.begin()
-        self.process_stages(session, False, trace)
-        self.provider.cleanup()
-        session.commit()
-
-    def change_version_to(self, new_version=None):
-        """
-        Will perform upgrading or downgrading, depends on currently installed version.
-        """
-        upgrading, trace = self.build_patching_trace(new_version)
-        if not trace:
-            return
-
-        connection = self.backend.connect()
-        session = database.backend.Session(connection)
-        session.begin()
-        self.process_stages(session, upgrading, trace)
-        session.commit()
+            print "no installation detected"
+            return None
+        needed_versions = available_versions[:current_version_idx+1]
+        needed_versions.reverse()
+        for version in needed_versions:
+            stage = self.catalog.load_stage(version)
+            stages.append((version, stage,))
+        self.provider.uninstall(stages)

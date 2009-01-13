@@ -27,26 +27,8 @@
 import os
 
 
-class BaseVersionsCatalog(object):
-    """
-    Class that lists all available versions.
-    """
-
-    def get_available_versions(self):
-        """
-        Returns list of available versions.
-        Don't forget to sort versions the right way (depends on you)
-        before returning them.
-        """
-        pass
-
-    def load_stage(self, version):
-        pass
-
-
-class FileSystemVersionsCatalog(BaseVersionsCatalog):
+class FileSystemVersionsCatalog(object):
     def __init__(self, path='.'):
-        super(FileSystemVersionsCatalog, self).__init__()
         self.path = path
 
     def get_available_versions(self):
@@ -58,3 +40,4 @@ class FileSystemVersionsCatalog(BaseVersionsCatalog):
         stage_module = __import__(self.path + '/' + version) # TBD dirtiness, make it look better
         Stage = getattr(stage_module, "Stage", None)
         return Stage()
+

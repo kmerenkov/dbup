@@ -27,26 +27,7 @@
 import database.backend
 
 
-class BaseVersionProvider(object):
-    """
-    Class that implements version provider interface.
-    Gives you an ability to look up current version of database
-    and cchange it.
-    """
-    def get_current_version(self):
-        """ Returns current version of database """
-        pass
-
-    def set_current_version(self, new_version):
-        """ Updates current version value in database """
-        pass
-
-    def cleanup(self):
-        """ Removes version information from database. Useful on uninstallation. """
-        pass
-
-
-class SqlVersionProvider(BaseVersionProvider):
+class SqlVersionProvider(object):
     """
     Class that implements sql-interface to get/set current version.
     If you want to implement more advanced logic for get_current_version
@@ -57,7 +38,6 @@ class SqlVersionProvider(BaseVersionProvider):
         """
         version_table - table where current version number is kept.
         """
-        super(BaseVersionProvider, self).__init__()
         # NOTE example: 'sqlite:///relative/path/to/database.txt'
         self.connection_string = connection_string
         self.version_table = version_table
@@ -65,65 +45,100 @@ class SqlVersionProvider(BaseVersionProvider):
             self.backend = database.backend.Backend(self.connection_string)
         else:
             self.backend = backend
+        self.session = None
 
-    def get_session(self):
-        """
-        For internal use only. Connects to database and returns a session.
-        You want to call for this function if you are overriding
-        set_current_version and get_current_version.
-        """
-        connection = self.backend.connect()
-        session = database.backend.Session(connection)
-        return session
+    def setup(self):
+        self.__maybe_init_session()
+        try:
+            self.__create_table()
+            self.session.commit()
+        except:
+            self.session.rollback()
+
+    def upgrade(self, stages):
+        self.setup()
+        current_stage = None
+        for stage_name, stage_instance in stages:
+            current_stage = stage_name
+            stage_instance.up(self.session)
+        self.set_current_version(current_stage) # commit comes from this function
+        self.session.close()
+
+    def downgrade(self, stages):
+        self.setup()
+        downgrade_to = stages[-1][0]
+        del stages[-1]
+        for stage_name, stage_instance in stages:
+            stage_instance.down(self.session)
+        self.set_current_version(downgrade_to) # commit comes from this function
+        self.session.close()
+
+    def uninstall(self, stages):
+        self.setup()
+        for _stage_name, stage_instance in stages:
+            stage_instance.down(self.session)
+        self.cleanup()
+        self.session.commit()
+        self.session.close()
+
+    def __maybe_init_session(self):
+        if not self.session:
+            connection = self.backend.connect()
+            self.session = database.backend.Session(connection)
 
     def __create_table(self):
-        session = self.get_session()
-        session.execute("create table %s (current_version char(50));" % self.version_table)
-        session.commit()
+        self.session.execute("create table %s (current_version char(50));" % self.version_table)
 
     def get_current_version(self):
         """
         Returns current version installed, or None.
         None supposed to mean that there is no installation at all.
         """
-        session = self.get_session()
+        self.__maybe_init_session()
         try:
-            ret = session.execute("select * from %s;" % self.version_table)
+            ret = self.session.execute("select * from %s;" % self.version_table)
             record = ret.fetchone()
-            session.commit()
-        except:
-            session.rollback()
+            self.session.commit()
+        except Exception, _e:
+            self.session.rollback()
             return None
-        return record[0]
+        if record is not None:
+            print "cur_ver: %s" % record[0]
+            return record[0]
+        else:
+            print "cur_ver: %s" % None
+            return None
 
     def set_current_version(self, new_version):
         """
         Updates current version record in database.
         Doesn't return anything.
         """
-        session = self.get_session()
+        self.__maybe_init_session()
         try:
-            session.execute("update %s set current_version=:new_version;" % self.version_table,
-                            {'new_version': new_version})
-            session.commit()
+            self.session.execute("delete from %s;" % self.version_table)
+            self.session.execute("insert into %s values (:new_version);" % self.version_table,
+                                 {'new_version': new_version})
+            # self.session.execute("update %s set current_version=:new_version;" % self.version_table,
+                            # {'new_version': new_version})
+            self.session.commit()
             return
         except: # TBD: catch OperationalError from alchemy
-            session.rollback()
+            self.session.rollback()
         # if we've failed to update version, create the table and 'insert' new version
-        self.__create_table()
-        session = self.get_session()
-        session.execute("insert into %s values (:new_version);" % self.version_table,
-                        {'new_version': new_version})
-        session.commit()
+        # self.__create_table()
+        # self.session.execute("insert into %s values (:new_version);" % self.version_table,
+        #                 {'new_version': new_version})
+        # self.session.commit()
 
     def cleanup(self):
         """
         Removes version information from database.
         """
-        session = self.get_session()
+        self.__maybe_init_session()
         try:
-            session.execute("drop table %s;" % self.version_table)
-            session.commit()
+            self.session.execute("drop table %s;" % self.version_table)
+            self.session.commit()
         except: # TBD: catch OperationalError from alchemy
-            session.rollback()
+            self.session.rollback()
 

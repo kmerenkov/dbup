@@ -56,27 +56,26 @@ class Backend(BaseBackend):
 
 class Session(object):
     """
-    This class is used to avoid api breakages in sqlalchemy.
+    This class is used to avoid api breakages in sqlalchemy (there were some before).
     """
     def __init__(self, connection):
         self.connection = connection
         AlchemySession = sqlalchemy.orm.sessionmaker(transactional=False)
         self.session = AlchemySession(bind=self.connection)
-        self.transaction_began = False
+        self.transaction_active = False
 
-    def __cleanup(self):
+    def close(self):
         self.connection.close()
         self.connection = None
         self.session = None
 
     def begin(self):
         self.session.begin()
-        self.transaction_began = True
+        self.transaction_active = True
 
     def execute(self, expression, *args, **kwargs):
-        if not self.transaction_began:
-            self.session.begin() # start transaction
-            self.transaction_began = True
+        if not self.transaction_active:
+            self.begin()
         return self.session.execute(expression, *args, **kwargs)
 
     def rollback(self):
@@ -84,11 +83,11 @@ class Session(object):
         Issue rollback on transaction. You cannot re-use this session after attempting rollback.
         """
         self.session.rollback()
-        self.__cleanup()
+        self.transaction_active = False
 
     def commit(self):
         """
         Finishes transaction. You cannot re-use this session after attempting commit.
         """
         self.session.commit()
-        self.__cleanup()
+        self.transaction_active = False
