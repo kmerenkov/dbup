@@ -69,7 +69,7 @@ class SqlWorker(object):
             print "OK"
         self.set_current_version(current_stage) # commit comes from this function
         self.session.close()
-        print "Upgrading complete."
+        print "Upgrading has been completed."
 
     def downgrade(self, stages):
         print "Downgrading..."
@@ -82,7 +82,7 @@ class SqlWorker(object):
             print "OK"
         self.set_current_version(downgrade_to) # commit comes from this function
         self.session.close()
-        print "Downgrading complete."
+        print "Downgrading has been completed."
 
     def uninstall(self, stages):
         print "Uninstalling..."
@@ -93,7 +93,7 @@ class SqlWorker(object):
             print "OK"
         self.cleanup()
         self.session.close()
-        print "Uninstalling complete."
+        print "Uninstalling has been completed."
 
     def __maybe_init_session(self):
         if not self.session:
