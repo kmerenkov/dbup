@@ -102,10 +102,8 @@ class SqlWorker(object):
             self.session.rollback()
             return None
         if record is not None:
-            print "cur_ver: %s" % record[0]
             return record[0]
         else:
-            print "cur_ver: %s" % None
             return None
 
     def set_current_version(self, new_version):
