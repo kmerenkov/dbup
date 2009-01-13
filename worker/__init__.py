@@ -82,8 +82,10 @@ class SqlWorker(object):
 
     def uninstall(self, stages):
         self.setup()
-        for _stage_name, stage_instance in stages:
+        for stage_name, stage_instance in stages:
+            print "[%s] " % stage_name,
             stage_instance.down(self.session)
+            print "OK"
         self.cleanup()
         self.session.close()
 
