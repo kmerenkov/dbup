@@ -27,7 +27,7 @@
 import database.backend
 
 
-class SqlVersionProvider(object):
+class SqlWorker(object):
     """
     Class that implements sql-interface to get/set current version.
     If you want to implement more advanced logic for get_current_version
