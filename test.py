@@ -19,5 +19,11 @@ elif action == 'dn':
     m.downgrade(sys.argv[2])
 elif action == 'del':
     m.uninstall()
+elif action == 'cur':
+    cur_ver = prov.get_current_version()
+    if cur_ver is not None:
+        print "Current version deployed: %s" % cur_ver
+    else:
+        print "No installation detected."
 else:
     print "Unknown action."

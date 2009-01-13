@@ -46,7 +46,7 @@ class Backend(BaseBackend):
         self.connection = None
 
     def connect(self):
-        self.engine = sqlalchemy.create_engine(self.connection_string, echo=True)
+        self.engine = sqlalchemy.create_engine(self.connection_string, echo=False)
         self.connection = self.engine.connect()
         return self.connection
 
