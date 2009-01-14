@@ -27,7 +27,16 @@
 import os
 
 
-class FileSystemVersionsCatalog(object):
+class PlainFilesVersionCatalog(object):
+    """
+    Version catalog that finds patches that live in one directory as simple python scripts.
+    Example:
+      ./dir/
+          + 01.py
+          + 02.py
+          + 03.py
+          ...
+    """
     def __init__(self, path='.'):
         self.path = path
 
@@ -37,7 +46,32 @@ class FileSystemVersionsCatalog(object):
         return versions
 
     def load_stage(self, version):
-        stage_module = __import__(self.path + '/' + version) # TBD dirtiness, make it look better
+        stage_module = __import__(os.path.join(self.path, version))
         Stage = getattr(stage_module, "Stage", None)
         return Stage()
 
+
+class DirectoryVersionCatalog(object):
+    """
+    Version catalog that finds patches that live in one directory as directories with __init__.py inside.
+    Useful if you ship fixtures along with the patches.
+    Example:
+      ./dir/
+          + 01/__init__.py
+          + 01/some_fixture
+          + 02/__init__.py
+          + 03/__init__.py
+          ...
+    """
+    def __init__(self, path='.'):
+        self.path = path
+
+    def get_available_versions(self):
+        versions = [ d for d in os.listdir(self.path) if os.path.isdir(os.path.join(self.path, d)) ]
+        versions.sort()
+        return versions
+
+    def load_stage(self, version):
+        stage_module = __import__(os.path.join(self.path, version))
+        Stage = getattr(stage_module, "Stage", None)
+        return Stage()

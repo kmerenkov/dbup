@@ -11,7 +11,8 @@ conn_str = 'sqlite:///dbtest.sqlite'
 action = sys.argv[1].lower()
 
 worker = worker.SqlWorker(conn_str)
-catalog = version_catalog.FileSystemVersionsCatalog('example_versions')
+catalog = version_catalog.PlainFilesVersionCatalog('example_catalogs/plain_files')
+# catalog = version_catalog.DirectoryVersionCatalog('example_catalogs/directories')
 
 m = Manager(worker=worker, catalog=catalog)
 
