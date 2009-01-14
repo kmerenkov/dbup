@@ -24,7 +24,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 
 
-import database.backend
+import dbup.database.backend
 
 
 class SqlWorker(object):
@@ -42,7 +42,7 @@ class SqlWorker(object):
         self.connection_string = connection_string
         self.version_table = version_table
         if backend is None:
-            self.backend = database.backend.Backend(self.connection_string)
+            self.backend = dbup.database.backend.Backend(self.connection_string)
         else:
             self.backend = backend
         self.session = None
@@ -104,7 +104,7 @@ class SqlWorker(object):
     def __maybe_init_session(self):
         if not self.session:
             connection = self.backend.connect()
-            self.session = database.backend.Session(connection)
+            self.session = dbup.database.backend.Session(connection)
 
     def __create_table(self):
         self.session.execute("create table %s (current_version char(50));" % self.version_table)
@@ -123,7 +123,7 @@ class SqlWorker(object):
             self.session.rollback()
             return None
         if record is not None:
-            return record[0]
+            return record[0].strip()
         else:
             return None
 
@@ -135,15 +135,19 @@ class SqlWorker(object):
         self.__maybe_init_session()
         try:
             self.session.execute("delete from %s;" % self.version_table)
-            self.session.execute("insert into %s values (:new_version);" % self.version_table,
-                                 {'new_version': new_version})
+            self.session.execute("insert into %s values (%%s);" % self.version_table,
+                                 [new_version])
             # self.session.execute("update %s set current_version=:new_version;" % self.version_table,
                             # {'new_version': new_version})
             self.session.commit()
             print "Changed to version %s." % new_version
-            return
+            return True
         except: # TBD: catch OperationalError from alchemy
+            import traceback
+            traceback.print_exc()
             self.session.rollback()
+            print "Failed to change version to %s." % new_version
+            return False
 
     def cleanup(self):
         """
