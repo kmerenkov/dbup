@@ -73,7 +73,10 @@ class SqlWorker(object):
 
     def downgrade(self, stages):
         print "Downgrading..."
-        self.setup()
+        # self.__maybe_init_session is used instead of self.setup because
+        # we should not attempt to create table with version on downgrade,
+        # it must be there, already.
+        self.__maybe_init_session()
         downgrade_to = stages[-1][0]
         del stages[-1]
         for stage_name, stage_instance in stages:
@@ -86,7 +89,10 @@ class SqlWorker(object):
 
     def uninstall(self, stages):
         print "Uninstalling..."
-        self.setup()
+        # self.__maybe_init_session is used instead of self.setup because
+        # we should not attempt to create table with version on downgrade,
+        # it must be there, already.
+        self.__maybe_init_session()
         for stage_name, stage_instance in stages:
             print "[%s] " % stage_name,
             stage_instance.down(self.session)
