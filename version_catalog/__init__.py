@@ -27,6 +27,9 @@
 import os
 
 
+j = os.path.join
+
+
 class PlainFilesVersionCatalog(object):
     """
     Version catalog that finds patches that live in one directory as simple python scripts.
@@ -41,12 +44,12 @@ class PlainFilesVersionCatalog(object):
         self.path = path
 
     def get_available_versions(self):
-        versions = [ f[:-3] for f in os.listdir(self.path) if not os.path.isdir(f) and f.endswith('.py') ]
+        versions = [ f[:-3] for f in os.listdir(self.path) if not os.path.isdir(j(self.path, f)) and f.endswith('.py') ]
         versions.sort()
         return versions
 
     def load_stage(self, version):
-        stage_module = __import__(os.path.join(self.path, version))
+        stage_module = __import__(j(self.path, version))
         Stage = getattr(stage_module, "Stage", None)
         return Stage()
 
@@ -67,11 +70,11 @@ class DirectoryVersionCatalog(object):
         self.path = path
 
     def get_available_versions(self):
-        versions = [ d for d in os.listdir(self.path) if os.path.isdir(os.path.join(self.path, d)) ]
+        versions = [ d for d in os.listdir(self.path) if os.path.isdir(j(self.path, d)) ]
         versions.sort()
         return versions
 
     def load_stage(self, version):
-        stage_module = __import__(os.path.join(self.path, version))
+        stage_module = __import__(j(self.path, version))
         Stage = getattr(stage_module, "Stage", None)
         return Stage()
