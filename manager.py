@@ -32,10 +32,12 @@ class Manager(object):
 
     def upgrade(self, to_version):
         current_version = self.worker.get_current_version()
+        available_versions = self.catalog.get_available_versions()
+        if to_version is None: # if destination version is not specified, use latest available
+            to_version = available_versions[-1]
         if current_version == to_version:
             print "Already at version %s." % current_version
             return
-        available_versions = self.catalog.get_available_versions()
         stages = []
         if current_version in available_versions:
             current_version_idx = available_versions.index(current_version)

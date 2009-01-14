@@ -14,7 +14,10 @@ catalog = version_catalog.FileSystemVersionsCatalog('example_versions')
 m = Manager(worker=worker, catalog=catalog)
 
 if action == 'up':
-    m.upgrade(sys.argv[2])
+    if len(sys.argv) <3:
+        m.upgrade(None)
+    else:
+        m.upgrade(sys.argv[2])
 elif action == 'dn':
     m.downgrade(sys.argv[2])
 elif action == 'del':
