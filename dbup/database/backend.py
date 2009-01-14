@@ -73,6 +73,9 @@ class Session(object):
         self.session.begin()
         self.transaction_active = True
 
+    def flush(self):
+        self.session.flush()
+
     def execute(self, expression, *args, **kwargs):
         if not self.transaction_active:
             self.begin()

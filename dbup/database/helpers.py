@@ -24,7 +24,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 
 
-def sql_from_file(session, path):
+def exec_sql_file(session, path):
     """
     Load SQL from file, specified by 'path' argument,
     and execute it via 'execute' function of 'session' specified.

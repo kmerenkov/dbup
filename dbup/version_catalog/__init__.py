@@ -49,9 +49,11 @@ class PlainFilesVersionCatalog(object):
         return versions
 
     def load_stage(self, version):
-        stage_module = __import__(j(self.path, version))
-        Stage = getattr(stage_module, "Stage", None)
-        return Stage()
+        stage_path = j(self.path, version)
+        stage_module = __import__(stage_path)
+        stage = stage_module.Stage()
+        stage.current_path = os.path.abspath(self.path)
+        return stage
 
 
 class DirectoryVersionCatalog(object):
@@ -75,6 +77,8 @@ class DirectoryVersionCatalog(object):
         return versions
 
     def load_stage(self, version):
-        stage_module = __import__(j(self.path, version))
-        Stage = getattr(stage_module, "Stage", None)
-        return Stage()
+        stage_path = j(self.path, version)
+        stage_module = __import__(stage_path)
+        stage = stage_module.Stage()
+        stage.current_path = os.path.abspath(stage_path)
+        return stage
