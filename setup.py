@@ -57,4 +57,5 @@ setup(name='dbup',
                 'dbup/version_catalog',
                 'dbup/worker',
                 'dbup/database'],
+      scripts=['bin/dbup']
       )
