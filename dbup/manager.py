@@ -99,6 +99,8 @@ class Manager(object):
             current_version_idx = available_versions.index(current_version)
         else:
             print "No installation detected."
+            print "Attempting to remove possible left-overs..."
+            self.worker.cleanup()
             return None
         needed_versions = available_versions[:current_version_idx+1]
         needed_versions.reverse()

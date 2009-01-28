@@ -159,5 +159,6 @@ class SqlWorker(object):
             self.session.commit()
             print "Removed version information from database."
         except: # TBD: catch OperationalError from alchemy
+            # print "Failed to remove version information from database (maybe there is none)."
             self.session.rollback()
 
