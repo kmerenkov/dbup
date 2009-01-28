@@ -25,6 +25,7 @@
 
 
 import os
+import sys
 
 
 j = os.path.join
@@ -76,9 +77,20 @@ class DirectoryVersionCatalog(object):
         versions.sort()
         return versions
 
+    def _maybe_update_sys_path(self):
+        """
+        This function modifies sys.path, in order to make versions import-able.
+        """
+        if self.path not in sys.path:
+            full_path_to_versions = os.path.abspath(self.path)
+            sys.path.insert(0, full_path_to_versions)
+
     def load_stage(self, version):
-        stage_path = j(self.path, version)
-        stage_module = __import__(stage_path)
+        self._maybe_update_sys_path()
+        # At this point, <my_version>.py must be import-able
+        # The bad thing is that its name may clash with already
+        # existing modules, in theory.
+        stage_module = __import__(version)
         stage = stage_module.Stage()
-        stage.current_path = os.path.abspath(stage_path)
+        stage.current_path = os.path.abspath(j(self.path, version))
         return stage
