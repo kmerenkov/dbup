@@ -32,7 +32,7 @@ from worker import SqlWorker
 import version_catalog
 
 
-USAGE = """Usage: %prog ( up [ VER ] | down VER | delete | check )
+USAGE = """Usage: %prog ( up [ VER ] | down VER | delete | status )
 
     up [VER]    upgrade DB to version VER
                 Ommit VER to upgrade to the latest available version.
@@ -44,7 +44,7 @@ USAGE = """Usage: %prog ( up [ VER ] | down VER | delete | check )
                 Will also destroy dbup internal information in DB.
                 In clean case you expect no tables in database after this operation.
 
-    check       show current version and exit"""
+    status      show current version and exit"""
 
 VALID_ACTIONS = ['up', 'down', 'delete', 'status']
 
