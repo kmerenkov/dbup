@@ -65,12 +65,12 @@ class Manager(object):
         if current_version == to_version:
             print "Already at version %s." % current_version
             return
+        available_versions = self.catalog.get_available_versions()
         # check if we need downgrade at all
         if available_versions.index(to_version) > available_versions.index(current_version):
             print "Requested version %s is higher than the current one - %s."
             print "Maybe you meant to upgrade?"
             return
-        available_versions = self.catalog.get_available_versions()
         stages = []
         if current_version in available_versions:
             current_version_idx = available_versions.index(current_version)
