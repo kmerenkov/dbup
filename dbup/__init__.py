@@ -49,7 +49,28 @@ USAGE = """Usage: %prog ( up [ VER ] | down VER | delete | status )
 VALID_ACTIONS = ['up', 'down', 'delete', 'status']
 
 
-def main(argv=sys.argv):
+def create_instance(cls_info):
+    """
+    Creates instance of a class specified in cls_info.
+    cls_info's format is (class_name, args, kwargs)
+    e.g.:
+       create_instance((dict, None, None))
+    """
+    cls, args, kwargs = cls_info
+    if args is None:
+        args = []
+    if kwargs is None:
+        kwargs = {}
+    return cls(*args, **kwargs)
+
+def main(argv=sys.argv,
+         override_manager=None,
+         override_catalog=None,
+         override_worker=None):
+    """
+    argv - command line arguments, defaults to sys.argv
+    override manager, catalog, worker - None or (class, args, kwargs)
+    """
     parser = OptionParser(usage=USAGE)
     parser.add_option('-c', '--connection-string',
                       default="",
@@ -69,9 +90,20 @@ def main(argv=sys.argv):
         parser.print_help()
         exit(1)
 
-    worker = SqlWorker(options.connection_string)
-    catalog = version_catalog.DirectoryVersionCatalog(options.version_path)
-    manager = Manager(worker=worker, catalog=catalog)
+    # Create instances of worker, catalog, and manager.
+    # They are possibly overrided from outside.
+    if override_worker:
+        worker = create_instance(override_worker)
+    else:
+        worker = SqlWorker(options.connection_string)
+    if override_catalog:
+        catalog = create_instance(override_catalog)
+    else:
+        catalog = version_catalog.DirectoryVersionCatalog(options.version_path)
+    if override_manager:
+        manager = create_instance(override_manager)
+    else:
+        manager = Manager(worker=worker, catalog=catalog)
 
     action = arguments[1]
 
