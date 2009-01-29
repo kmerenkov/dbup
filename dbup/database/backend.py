@@ -38,6 +38,7 @@ class BaseBackend(object):
     def disconnect(self):
         pass
 
+
 class Backend(BaseBackend):
     def __init__(self, connection_string):
         super(Backend, self).__init__(connection_string)
@@ -46,7 +47,22 @@ class Backend(BaseBackend):
         self.connection = None
 
     def connect(self):
-        self.engine = sqlalchemy.create_engine(self.connection_string, echo=False)
+        try:
+            self.engine = sqlalchemy.create_engine(self.connection_string, echo=False)
+        except ImportError, e:
+            # TBD beautify, until somebody sees that code
+            dialects = ('mysql', 'oracle', 'postgres', 'sqlite', 'etc')
+            print "Error: %s" % e.message
+            print
+            print "Probably you supplied the wrong connection string to a database server."
+            print
+            print "Your connection string:"
+            print "  %s" % self.connection_string
+            print
+            print "The connection string must be in the following form:"
+            print "  dialect://user:password@host/dbname[?key=value..]"
+            print "where dialect is a name such as %s." % ", ".join(dialects)
+            exit(1)
         self.connection = self.engine.connect()
         return self.connection
 
