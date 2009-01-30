@@ -35,10 +35,10 @@ class Manager(object):
         available_versions = self.catalog.get_available_versions()
         if to_version is None: # if destination version is not specified, use latest available
             to_version = available_versions[-1]
+        # check if we need upgrade at all
         if current_version == to_version:
             print "Already at version %s." % current_version
             return
-        # check if we need upgrade at all
         if current_version is not None:
             if available_versions.index(to_version) < available_versions.index(current_version):
                 print "Requested version %s is lower than the current one - %s."
@@ -63,11 +63,11 @@ class Manager(object):
 
     def downgrade(self, to_version):
         current_version = self.worker.get_current_version()
+        # check if we need downgrade at all
         if current_version == to_version:
             print "Already at version %s." % current_version
             return
         available_versions = self.catalog.get_available_versions()
-        # check if we need downgrade at all
         if current_version is not None:
             if available_versions.index(to_version) > available_versions.index(current_version):
                 print "Requested version %s is higher than the current one - %s."

@@ -135,8 +135,9 @@ class SqlWorker(object):
         self.__maybe_init_session()
         try:
             self.session.execute("delete from %s;" % self.version_table)
-            self.session.execute("insert into %s values (%%s);" % self.version_table,
-                                 [new_version])
+            self.session.execute("insert into %s values ('%s'));" % (self.version_table, new_version))
+            # self.session.execute("insert into %s values (%%s);" % self.version_table,
+            #                      [new_version])
             # self.session.execute("update %s set current_version=:new_version;" % self.version_table,
                             # {'new_version': new_version})
             self.session.commit()
