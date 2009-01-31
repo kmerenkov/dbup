@@ -41,7 +41,8 @@ class Manager(object):
             return
         if current_version is not None:
             if available_versions.index(to_version) < available_versions.index(current_version):
-                print "Requested version %s is lower than the current one - %s."
+                print "Requested version %s is lower than the current one - %s." % (to_version,
+                                                                                    current_version)
                 print "Maybe you meant to downgrade?"
                 return
         # ok, upgrading
@@ -70,7 +71,8 @@ class Manager(object):
         available_versions = self.catalog.get_available_versions()
         if current_version is not None:
             if available_versions.index(to_version) > available_versions.index(current_version):
-                print "Requested version %s is higher than the current one - %s."
+                print "Requested version %s is higher than the current one - %s." % (to_version,
+                                                                                     current_version)
                 print "Maybe you meant to upgrade?"
                 return
         stages = []
@@ -82,7 +84,8 @@ class Manager(object):
         if to_version in available_versions:
             to_version_idx = available_versions.index(to_version)
         else:
-            print "Requested version (%s) is unavailable. Available versions are: %s" % (to_version, ", ".join(available_versions))
+            print "Requested version (%s) is unavailable. Available versions are: %s" % (to_version,
+                                                                                         ", ".join(available_versions))
             return None
         needed_versions = available_versions[to_version_idx: current_version_idx+1]
         needed_versions.reverse()
