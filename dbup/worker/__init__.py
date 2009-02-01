@@ -25,7 +25,11 @@
 
 
 import dbup.database.backend
+from dbup import events
 
+
+class NoInstallation(Exception):
+    pass
 
 class SqlWorker(object):
     """
@@ -38,6 +42,15 @@ class SqlWorker(object):
         """
         version_table - table where current version number is kept.
         """
+        # common events
+        self.onNewTask = events.Event() # event triggered before doing any action
+        self.onTaskCompleted = events.Event() # event triggered after action completion
+        self.onNewTaskGroup = events.Event()
+        self.onTaskGroupCompleted = events.Event()
+        self.onVersionChanged = events.Event()
+        self.onFailedToChangeVersion = events.Event()
+        self.onCleanedUp = events.Event()
+
         # NOTE example: 'sqlite:///relative/path/to/database.txt'
         self.connection_string = connection_string
         self.version_table = version_table
@@ -59,20 +72,20 @@ class SqlWorker(object):
             self.session.rollback()
 
     def upgrade(self, stages):
-        print "Upgrading..."
+        self.onNewTaskGroup()
         self.setup()
         current_stage = None
         for stage_name, stage_instance in stages:
             current_stage = stage_name
-            print "[%s] " % current_stage,
+            self.onNewTask(current_stage)
             stage_instance.up(self.session)
-            print "OK"
+            self.onTaskCompleted(current_stage)
         self.set_current_version(current_stage) # commit comes from this function
         self.session.close()
-        print "Upgrading has been completed."
+        self.onTaskGroupCompleted()
 
     def downgrade(self, stages):
-        print "Downgrading..."
+        self.onNewTaskGroup()
         # self.__maybe_init_session is used instead of self.setup because
         # we should not attempt to create table with version on downgrade,
         # it must be there, already.
@@ -80,26 +93,26 @@ class SqlWorker(object):
         downgrade_to = stages[-1][0]
         del stages[-1]
         for stage_name, stage_instance in stages:
-            print "[%s] " % stage_name,
+            self.onNewTask(stage_name)
             stage_instance.down(self.session)
-            print "OK"
+            self.onTaskCompleted(stage_name)
         self.set_current_version(downgrade_to) # commit comes from this function
         self.session.close()
-        print "Downgrading has been completed."
+        self.onTaskGroupCompleted()
 
     def uninstall(self, stages):
-        print "Uninstalling..."
+        self.onNewTaskGroup()
         # self.__maybe_init_session is used instead of self.setup because
         # we should not attempt to create table with version on downgrade,
         # it must be there, already.
         self.__maybe_init_session()
         for stage_name, stage_instance in stages:
-            print "[%s] " % stage_name,
+            self.onNewTask(stage_name)
             stage_instance.down(self.session)
-            print "OK"
+            self.onTaskCompleted(stage_name)
         self.cleanup()
         self.session.close()
-        print "Uninstalling has been completed."
+        self.onTaskGroupCompleted()
 
     def __maybe_init_session(self):
         if not self.session:
@@ -121,11 +134,11 @@ class SqlWorker(object):
             self.session.commit()
         except Exception, _e:
             self.session.rollback()
-            return None
+            raise NoInstallation()
         if record is not None:
             return record[0].strip()
         else:
-            return None
+            raise NoInstallation()
 
     def set_current_version(self, new_version):
         """
@@ -136,18 +149,14 @@ class SqlWorker(object):
         try:
             self.session.execute("delete from %s;" % self.version_table)
             self.session.execute("insert into %s values ('%s');" % (self.version_table, new_version))
-            # self.session.execute("insert into %s values (%%s);" % self.version_table,
-            #                      [new_version])
-            # self.session.execute("update %s set current_version=:new_version;" % self.version_table,
-                            # {'new_version': new_version})
             self.session.commit()
-            print "Changed to version %s." % new_version
+            self.onVersionChanged(new_version)
             return True
         except: # TBD: catch OperationalError from alchemy
             import traceback
             traceback.print_exc()
             self.session.rollback()
-            print "Failed to change version to %s." % new_version
+            self.onFailedToChangeVersion(new_version)
             return False
 
     def cleanup(self):
@@ -158,7 +167,7 @@ class SqlWorker(object):
         try:
             self.session.execute("drop table %s;" % self.version_table)
             self.session.commit()
-            print "Removed version information from database."
+            self.onCleanedUp()
         except: # TBD: catch OperationalError from alchemy
             # print "Failed to remove version information from database (maybe there is none)."
             self.session.rollback()

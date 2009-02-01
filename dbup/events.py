@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 # Copyright (c) 2009 by Konstantin Merenkov <kmerenkov@gmail.com>
 #
@@ -24,41 +24,18 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 
 
-from distutils.core import setup
-import re
+class Event(object):
+    def __init__(self):
+        self.subscribers = []
 
+    def __add__(self, subscriber):
+        self.subscribers.append(subscriber)
+        return self
 
-def get_version():
-    return '1.0'
+    def __sub__(self, subscriber):
+        self.subscribers.remove(subscriber)
+        return self
 
-def get_author():
-    return 'Konstantin Merenkov <kmerenkov@gmail.com>'
-
-def get_author_email():
-    author = get_author()
-    re_email = re.compile(r'.*\<(?P<email>.+)\>.*')
-    m = re_email.match(author)
-    if m:
-        return m.group('email')
-    else:
-        return None
-
-
-setup(name='dbup',
-      version=get_version(),
-      description='blah blah',
-      author=get_author(),
-      author_email=get_author_email(),
-      maintainer=get_author(),
-      maintainer_email=get_author_email(),
-      license='MIT',
-      url='http://github.com/kmerenkov/dbup/tree/master',
-      packages=['dbup',
-                'dbup/database',
-                'dbup/manager',
-                'dbup/version_catalog',
-                'dbup/worker',
-                ],
-      py_modules=['dbup/events'],
-      scripts=['bin/dbup']
-      )
+    def __call__(self, *args, **kwargs):
+        for subscriber in self.subscribers:
+            subscriber(*args, **kwargs)
