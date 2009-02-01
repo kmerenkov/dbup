@@ -45,7 +45,7 @@ USAGE = """Usage: %prog ( up [ VER ] | down VER | delete | status )
                 Will also destroy dbup internal information in DB.
                 In clean case you expect no tables in database after this operation.
 
-    status      show current version and exit"""
+    status      show current version and exit."""
 
 VALID_ACTIONS = ['up', 'down', 'delete', 'status']
 
@@ -76,7 +76,7 @@ def main(argv=sys.argv,
     parser.add_option('-c', '--connection-string',
                       default="",
                       metavar="STRING",
-                      help="Connection string to database server.")
+                      help="Connection string to database server (scheme://user:pwd@host/database).")
     parser.add_option('-p', '--version-path',
                       default="",
                       metavar="PATH",
