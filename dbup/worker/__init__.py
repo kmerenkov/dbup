@@ -38,7 +38,7 @@ class SqlWorker(object):
     and set_current_version, you just have to inherit this class and
     re-implement these methods.
     """
-    def __init__(self, connection_string, version_table='dbup_version', backend=None):
+    def __init__(self, connection_string='', version_table='dbup_version', backend=None):
         """
         version_table - table where current version number is kept.
         """

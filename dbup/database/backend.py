@@ -40,15 +40,16 @@ class BaseBackend(object):
 
 
 class Backend(BaseBackend):
-    def __init__(self, connection_string):
+    def __init__(self, connection_string, echo=False):
         super(Backend, self).__init__(connection_string)
         self.connection_string = connection_string
         self.engine = None
         self.connection = None
+        self.echo = echo
 
     def connect(self):
         try:
-            self.engine = sqlalchemy.create_engine(self.connection_string, echo=False)
+            self.engine = sqlalchemy.create_engine(self.connection_string, echo=self.echo)
         except ImportError, e:
             # TBD beautify, until somebody sees that code
             dialects = ('mysql', 'oracle', 'postgres', 'sqlite', 'etc')

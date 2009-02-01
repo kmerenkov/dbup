@@ -29,6 +29,7 @@ from optparse import OptionParser
 
 from manager import Manager, NothingToDo, UnavailableVersion
 from worker import SqlWorker, NoInstallation
+from database.backend import Backend
 import version_catalog
 
 
@@ -80,6 +81,10 @@ def main(argv=sys.argv,
                       default="",
                       metavar="PATH",
                       help="Path to versions.")
+    parser.add_option('-v', '--verbose',
+                      default=False,
+                      action="store_true",
+                      help="Print debug messages")
 
     options, arguments = parser.parse_args(argv)
     if len(arguments) < 2 or arguments[1] not in VALID_ACTIONS:
@@ -95,7 +100,8 @@ def main(argv=sys.argv,
     if override_worker:
         worker = create_instance(override_worker)
     else:
-        worker = SqlWorker(options.connection_string)
+        backend = Backend(options.connection_string, echo=options.verbose)
+        worker = SqlWorker(backend=backend)
     if override_catalog:
         catalog = create_instance(override_catalog)
     else:
