@@ -50,6 +50,9 @@ class SqlWorker(object):
         self.onVersionChanged = events.Event()
         self.onFailedToChangeVersion = events.Event()
         self.onCleanedUp = events.Event()
+        self.onFailedToCleanUp = events.Event()
+
+        self.is_table_present = False
 
         # NOTE example: 'sqlite:///relative/path/to/database.txt'
         self.connection_string = connection_string
@@ -65,6 +68,8 @@ class SqlWorker(object):
         For internal use. Attempts to create database containing version information.
         """
         self.__maybe_init_session()
+        if self.is_table_present:
+            return
         try:
             self.__create_table()
             self.session.commit()
@@ -121,6 +126,7 @@ class SqlWorker(object):
 
     def __create_table(self):
         self.session.execute("create table %s (current_version char(50));" % self.version_table)
+        self.is_table_present = True
 
     def get_current_version(self):
         """
@@ -136,6 +142,7 @@ class SqlWorker(object):
             self.session.rollback()
             raise NoInstallation()
         if record is not None:
+            self.is_table_present = True # table with version is there
             return record[0].strip()
         else:
             raise NoInstallation()
@@ -145,12 +152,13 @@ class SqlWorker(object):
         Updates current version record in database.
         Doesn't return anything.
         """
-        self.__maybe_init_session()
+        self.setup()
         try:
             self.session.execute("delete from %s;" % self.version_table)
             self.session.execute("insert into %s values ('%s');" % (self.version_table, new_version))
             self.session.commit()
             self.onVersionChanged(new_version)
+            self.is_table_present = True
             return True
         except: # TBD: catch OperationalError from alchemy
             import traceback
@@ -169,6 +177,6 @@ class SqlWorker(object):
             self.session.commit()
             self.onCleanedUp()
         except: # TBD: catch OperationalError from alchemy
-            # print "Failed to remove version information from database (maybe there is none)."
             self.session.rollback()
+            self.onFailedToCleanUp()
 

@@ -117,6 +117,7 @@ def main(argv=sys.argv,
     worker.onVersionChanged += lambda version: sys.stdout.write("New version: \"%s\".\n" % version)
     worker.onFailedToChangeVersion += lambda version: sys.stdout.write("Failed to set version to \"%s\".\n" % version)
     worker.onCleanedUp += lambda: sys.stdout.write("Removed version information from database.\n")
+    worker.onFailedToCleanUp  += lambda: sys.stdout.write("Failed to remove version information from database.\n")
 
     action = arguments[1]
 
